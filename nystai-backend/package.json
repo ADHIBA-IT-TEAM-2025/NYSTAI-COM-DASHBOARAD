@@ -1,0 +1,30 @@
+{
+  "name": "nystai-backend",
+  "version": "1.0.0",
+  "description": "Nystai backend for add product",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/server.js",
+    "prisma": "prisma",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^6.16.2",
+    "@vercel/blob": "^2.0.0",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "joi": "^18.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "prisma": "^6.16.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
