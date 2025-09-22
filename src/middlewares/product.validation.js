@@ -25,7 +25,6 @@ export const parseProductArrays = (req, res, next) => {
   }
 };
 
-
 // Create product schema
 export const createProductSchema = Joi.object({
   name: Joi.string().min(3).max(100).required(),
@@ -55,10 +54,14 @@ export const updateProductSchema = Joi.object({
   coverDesc: Joi.string().max(300),
   mainDesc: Joi.string().max(1000),
   categoryId: Joi.number(),
-  keyFeatures: Joi.array().items(Joi.string().min(2).max(500)).min(2).max(6),
-  smartIconsText: Joi.array().items(Joi.string().min(1).max(50)).min(2).max(7),
+  keyFeatures: Joi.array()
+    .items(Joi.string().min(2).max(500))
+    .min(2), // removed .max(6)
+  smartIconsText: Joi.array()
+    .items(Joi.string().min(1).max(50))
+    .min(2)
+    .max(7),
 });
-
 
 // Middleware for Joi validation
 export const validateBody = schema => (req, res, next) => {
