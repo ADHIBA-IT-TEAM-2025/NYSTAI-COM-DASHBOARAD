@@ -18,24 +18,10 @@ import {
 const router = express.Router();
 
 // ➕ Add Product
-router.post(
-  '/add',
-  uploadProductImages,
-  parseProductArrays,
-  validateBody(createProductSchema),
-  validateProductFiles,
-  createProduct
-);
+router.post('/add',uploadProductImages,parseProductArrays,validateBody(createProductSchema),validateProductFiles,createProduct);
 
 // ✏️ Update Product
-router.put(
-  '/update/:id',
-  uploadProductImages,
-  parseProductArrays,
-  validateBody(updateProductSchema),
-  validateProductFiles,
-  updateProduct
-);
+router.put('/update/:id',uploadProductImages,parseProductArrays,validateBody(updateProductSchema),validateProductFiles,updateProduct);
 
 // 📋 Get all Products
 router.get('/list', getProducts);
