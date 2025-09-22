@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: nystai-backend
+    env: node
+    plan: free   # change to 'starter' or 'standard' if needed
+    rootDir: nystai-backend
+    buildCommand: "npm install && npm run build"
+    startCommand: "npm start"
+    envVars:
+      - key: DATABASE_URL
+        sync: false   # set in Render dashboard
+      - key: JWT_SECRET
+        sync: false   # set in Render dashboard
