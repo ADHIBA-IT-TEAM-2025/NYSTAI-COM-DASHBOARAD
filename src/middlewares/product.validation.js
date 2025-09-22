@@ -39,7 +39,6 @@ export const createProductSchema = Joi.object({
   keyFeatures: Joi.array()
     .items(Joi.string().min(2).max(500))
     .min(2)
-    .max(6)
     .required(),
   smartIconsText: Joi.array()
     .items(Joi.string().min(1).max(50))
@@ -56,9 +55,10 @@ export const updateProductSchema = Joi.object({
   coverDesc: Joi.string().max(300),
   mainDesc: Joi.string().max(1000),
   categoryId: Joi.number(),
-  keyFeatures: Joi.array().items(Joi.string().min(2).max(50)).min(2).max(6),
+  keyFeatures: Joi.array().items(Joi.string().min(2).max(500)).min(2).max(6),
   smartIconsText: Joi.array().items(Joi.string().min(1).max(50)).min(2).max(7),
 });
+
 
 // Middleware for Joi validation
 export const validateBody = schema => (req, res, next) => {
