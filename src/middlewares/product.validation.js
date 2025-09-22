@@ -37,7 +37,7 @@ export const createProductSchema = Joi.object({
   mainDesc: Joi.string().max(1000).required(),
   categoryId: Joi.number().required(),
   keyFeatures: Joi.array()
-    .items(Joi.string().min(2).max(50))
+    .items(Joi.string().min(2).max(500))
     .min(2)
     .max(6)
     .required(),
