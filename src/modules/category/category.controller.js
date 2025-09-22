@@ -186,14 +186,28 @@ export const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
 
-    await prisma.category.delete({
-      where: { id: parseInt(id) },
+    // Check if category exists
+    const category = await prisma.category.findUnique({
+      where: { id: Number(id) },
     });
 
-    res.json({ message: 'Category and related products deleted successfully' });
-  } catch (err) {
-    console.error('Error deleting category:', err);
-    res.status(500).json({ message: err.message });
+    if (!category) {
+      return res.status(404).json({
+        message: `Category with id ${id} not found`,
+      });
+    }
+
+    // Delete if exists
+    await prisma.category.delete({
+      where: { id: Number(id) },
+    });
+
+    res.json({ message: `Category with id ${id} deleted successfully` });
+  } catch (error) {
+    console.error("Error deleting category:", error);
+    res.status(500).json({
+      message: "Failed to delete category",
+      error: error.message,
+    });
   }
 };
-
