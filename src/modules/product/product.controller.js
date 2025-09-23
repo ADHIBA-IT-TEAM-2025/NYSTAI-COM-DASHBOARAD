@@ -2,6 +2,13 @@ import prisma from '../../config/db.js';
 import { put } from '@vercel/blob';
 import path from 'path';
 import crypto from 'crypto';
+import {
+  getCachedProducts,
+  setCachedProducts,
+  clearCachedProducts,
+} from "./product.cache.js";
+import redisClient from "../../config/redis.js";
+import * as productService from "./product.service.js";
 
 const randomSuffix = () => crypto.randomBytes(6).toString('hex');
 
@@ -52,16 +59,14 @@ export const createProduct = async (req, res) => {
       });
 
       // Save to ProductImage table
-const saved = await prisma.productMedia.create({
-  data: {
-    type,
-    text,
-    imageUrl: blob.url,
-    productId: product.id,
-  },
-});
-
-      return saved;
+      return await prisma.productMedia.create({
+        data: {
+          type,
+          text,
+          imageUrl: blob.url,
+          productId: product.id,
+        },
+      });
     };
 
     // 3️⃣ Upload cover (single)
@@ -87,6 +92,9 @@ const saved = await prisma.productMedia.create({
       }
     }
 
+    // 🔄 Clear cache after create
+    await clearCachedProducts();
+
     res.status(201).json({
       product,
       images: uploadedFiles,
@@ -99,19 +107,30 @@ const saved = await prisma.productMedia.create({
 
 export const getProducts = async (req, res) => {
   try {
-    const products = await prisma.product.findMany({
-      include: {
-        images: true, // include ProductMedia
-        category: true, // include related category
-      },
-    });
+    // 1️⃣ Check Redis cache first
+    const cacheData = await redisClient.get("products");
+    if (cacheData) {
+      console.log("✅ Cache hit: products");
+      return res.json(JSON.parse(cacheData));
+    }
 
+    // 2️⃣ Fetch from DB
+    const products = await productService.getAllProducts();
+
+    // 3️⃣ Save to Redis with expiration (3600 seconds = 1 hour)
+    await redisClient.setEx("products", 3600, JSON.stringify(products));
+
+    console.log("💾 Cache set: products");
     res.json(products);
-  } catch (err) {
-    console.error('Error fetching products:', err);
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    console.error("❌ getProducts error:", error); // log full error for debugging
+    res.status(500).json({ 
+      error: "Server error", 
+      details: error.message 
+    });
   }
 };
+
 
 export const getProductById = async (req, res) => {
   try {
@@ -220,6 +239,9 @@ export const updateProduct = async (req, res) => {
       }
     }
 
+    // 🔄 Clear cache after update
+    await clearCachedProducts();
+
     res.json({
       message: 'Product updated successfully',
       product,
@@ -243,6 +265,9 @@ export const deleteProduct = async (req, res) => {
 
     await prisma.product.delete({ where: { id: parseInt(id) } });
 
+    // 🔄 Clear cache after delete
+    await clearCachedProducts();
+
     res.json({
       message: 'Product and all related images deleted successfully',
     });
@@ -251,5 +276,3 @@ export const deleteProduct = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
-
