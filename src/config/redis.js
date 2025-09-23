@@ -1,9 +1,17 @@
 import Redis from "ioredis";
 
-// Connect using REDIS_URL from environment
-const redisClient = new Redis(process.env.REDIS_URL);
+const redis = new Redis(process.env.REDIS_URL);
 
-redisClient.on("connect", () => console.log("✅ Connected to Redis!"));
-redisClient.on("error", (err) => console.error("❌ Redis connection error:", err));
+redis.on("connect", () => {
+  console.log("✅ Connected to Redis!");
+});
 
-export default redisClient;
+redis.on("error", (err) => {
+  console.error("❌ Redis error:", err);
+});
+
+(async () => {
+  await redis.set("hello", "world");
+  const value = await redis.get("hello");
+  console.log("Stored value:", value); // -> "world"
+})();
