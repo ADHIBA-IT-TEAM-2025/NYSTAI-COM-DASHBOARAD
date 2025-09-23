@@ -1,17 +1,14 @@
-import Redis from "ioredis";
+import { createClient } from "redis";
 
-const redis = new Redis(process.env.REDIS_URL);
-
-redis.on("connect", () => {
-  console.log("✅ Connected to Redis!");
+const redisClient = createClient({
+  url: process.env.REDIS_URL
 });
 
-redis.on("error", (err) => {
-  console.error("❌ Redis error:", err);
-});
+// Event listeners
+redisClient.on("error", (err) => console.error("❌ Redis connection error:", err));
+redisClient.on("connect", () => console.log("✅ Connected to Redis!"));
 
-(async () => {
-  await redis.set("hello", "world");
-  const value = await redis.get("hello");
-  console.log("Stored value:", value); // -> "world"
-})();
+// Connect
+await redisClient.connect();
+
+export default redisClient;

@@ -10,11 +10,10 @@ export const getCachedProducts = async () => {
 
 // Set products into cache
 export const setCachedProducts = async (products) => {
-  await redis.set(PRODUCT_CACHE_KEY, JSON.stringify(products), "EX", 60 * 5); 
-  // Cache for 5 minutes
+  await redis.set(PRODUCT_CACHE_KEY, JSON.stringify(products), "EX", 60 * 5);
 };
 
-// Clear product cache (when add/update/delete)
+// Clear product cache
 export const clearCachedProducts = async () => {
   await redis.del(PRODUCT_CACHE_KEY);
 };
