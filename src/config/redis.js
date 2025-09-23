@@ -1,17 +1,9 @@
-// redis.js
 import Redis from "ioredis";
 
-// Create a Redis client using the REDIS_URL from environment variables
-const redis = new Redis(process.env.REDIS_URL);
+// Connect using REDIS_URL from environment
+const redisClient = new Redis(process.env.REDIS_URL);
 
-// Event listeners for debugging and monitoring
-redis.on("connect", () => {
-  console.log("✅ Connected to Redis successfully!");
-});
+redisClient.on("connect", () => console.log("✅ Connected to Redis!"));
+redisClient.on("error", (err) => console.error("❌ Redis connection error:", err));
 
-redis.on("error", (err) => {
-  console.error("❌ Redis connection error:", err);
-});
-
-// Export the Redis client to use in other files
-export default redis;
+export default redisClient;
