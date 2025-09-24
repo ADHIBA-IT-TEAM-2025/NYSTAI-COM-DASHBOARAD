@@ -131,61 +131,47 @@ export const forgotPasswordOTP = async (req, res) => {
     <meta charset="UTF-8" />
     <title>Password Reset OTP</title>
   </head>
-  <body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f4f4f4;">
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-      <tr>
-        <td align="center" style="padding:0;">
+<body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f4f4f4; height:100%; width:100%;">
+  <!-- Outer Table to center vertically and horizontally -->
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" height="100%">
+    <tr>
+      <td align="center" valign="middle">
 
-          <!-- Background section -->
-          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" >
-            <tr>
-              <td align="center" valign="middle" style="height:220px;">&nbsp;</td>
-            </tr>
-          </table>
+        <!-- White Card Section -->
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600"
+               style="background:#fff; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="padding:40px 30px 60px 30px; text-align:center;">
+              <img src="https://yq8r2ictoc4hzxtd.public.blob.vercel-storage.com/MAI-IMAGE/logo-nystai.png" 
+                   alt="NYSTAI Logo" width="160" style="display:block; margin:0 auto;" />
+              <h2 style="margin:20px 0 0 0; font-size:22px; font-weight:600; color:#555;">YOUR OTP</h2>
+              <p style="margin:12px 0; font-size:16px; color:#333;">Hey ${
+                user.name || 'User'
+              }..!</p>
+              <p style="margin:12px 0; font-size:14px; color:#666; line-height:1.5;">
+                Use the following OTP to reset your password.<br/>
+                OTP is valid for <strong>1 minute</strong>. Do not share this code with others,
+                including NYSTAI employees.
+              </p>
+              <p style="font-size:38px; font-weight:bold; color:#d4a017; letter-spacing:12px; margin:24px 0;">
+                ${otp}
+              </p>
+              <p style="font-size:14px; color:#888; margin:20px 0;">
+                If you didn’t request this, you can ignore this email.
+              </p>
+              <p style="font-size:13px; color:#666; margin-top:30px;">
+                Need help? <a href="https://nystai.com" style="color:#ff4c4c; text-decoration:none;">Ask at Nystai.com</a>
+              </p>
+            </td>
+          </tr>
+        </table>
 
-          <!-- Overlay Card -->
-          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin-top:-140px;padding: 40px; background:#fff; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.1); overflow:hidden;">
-            
-            <!-- Logo -->
-            <tr>
-              <td align="center" style="padding:20px;">
-                <img src="https://yq8r2ictoc4hzxtd.public.blob.vercel-storage.com/MAI-IMAGE/logo-nystai.png" alt="NYSTAI Logo" width="160" style="display:block; margin:0 auto;" />
-              </td>
-            </tr>
-
-            <!-- Content -->
-            <tr>
-              <td align="center" style="padding:30px 40px;">
-                <h2 style="margin:0; font-size:22px; font-weight:600; color:#555;">YOUR OTP</h2>
-                <p style="margin:12px 0; font-size:16px; color:#333;">Hey ${
-                  user.name || 'User'
-                }..!</p>
-                <p style="margin:12px 0; font-size:14px; color:#666; line-height:1.5;">
-                  Use the following OTP to reset your password.<br/>
-                  OTP is valid for <strong>1 minute</strong>. Do not share this code with others,
-                  including NYSTAI employees.
-                </p>
-
-                <!-- OTP -->
-                <p style="font-size:38px; font-weight:bold; color:#d4a017; letter-spacing:12px; margin:24px 0;">
-                  ${otp}
-                </p>
-
-                <p style="font-size:14px; color:#888; margin:20px 0;">
-                  If you didn’t request this, you can ignore this email.
-                </p>
-                <p style="font-size:13px; color:#666; margin-top:30px;">
-                  Need help? <a href="https://nystai.com" style="color:#ff4c4c; text-decoration:none;">Ask at Nystai.com</a>
-                </p>
-              </td>
-            </tr>
-          </table>
-
-        </td>
-      </tr>
-    </table>
-  </body>
+      </td>
+    </tr>
+  </table>
+</body>
 </html>
+
 `,
       // No attachments needed now
     });
