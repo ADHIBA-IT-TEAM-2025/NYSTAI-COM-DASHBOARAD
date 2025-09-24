@@ -183,7 +183,6 @@ export const verifyOTP = async (req, res) => {
   }
 };
 
-
 export const resetPasswordWithOTP = async (req, res) => {
   try {
     const { token } = req.params;
