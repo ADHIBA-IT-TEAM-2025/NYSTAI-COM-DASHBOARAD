@@ -8,18 +8,16 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   name      String
-  email     String   @unique
-  password  String   // store hashed password
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-enum Role {
-  USER
-  ADMIN
+  email     String    @unique
+  password  String
+  role      Role      @default(USER)
+  otp       String?
+  otpExpiry DateTime? @db.Timestamp(6)
+  otpCount  Int?      @default(0) // tracks OTP attempts
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 
@@ -27,12 +25,12 @@ model Category {
   id        Int       @id @default(autoincrement())
   name      String
   bannerUrl String?
-  iconUrl   String?      // new field for category icon
+  iconUrl   String?
   products  Product[]
 }
 
 model Product {
-  id          Int             @id @default(autoincrement())
+  id          Int            @id @default(autoincrement())
   name        String
   subName     String
   code        String
@@ -40,15 +38,20 @@ model Product {
   mainDesc    String
   keyFeatures String[]
   categoryId  Int
-  category    Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  images      ProductMedia[]  // <-- ProductMedia relation
+  category    Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  images      ProductMedia[]
 }
 
 model ProductMedia {
-  id        Int      @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   type      String
   text      String?
-  imageUrl  String
   productId Int
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  imageUrl  String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  USER
+  ADMIN
 }

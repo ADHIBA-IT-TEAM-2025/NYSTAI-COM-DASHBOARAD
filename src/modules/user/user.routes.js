@@ -1,9 +1,10 @@
 import express from 'express';
+import { getAllUsers } from '../user/user.controller.js';
 import { authenticate, isAdmin } from '../../middlewares/authMiddleware.js';
-import { updateUserRole, getAllUsers } from './user.controller.js';
 
 const router = express.Router();
 
-router.put('/role/:id', authenticate, isAdmin, updateUserRole);
-router.get('/', authenticate, isAdmin, getAllUsers);
+// Admin-only route
+router.get('/all', authenticate, isAdmin, getAllUsers);
+
 export default router;

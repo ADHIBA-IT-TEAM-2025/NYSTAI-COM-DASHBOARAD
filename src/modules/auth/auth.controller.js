@@ -1,25 +1,26 @@
 import prisma from '../../config/db.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import nodemailer from 'nodemailer';
 
+// REGISTER
 export const register = async (req, res) => {
   try {
-    const { name, email, password, confirmPassword } = req.body;
+    const { name, email, password } = req.body;
 
-    if (password !== confirmPassword) {
-      return res.status(400).json({ message: 'Passwords do not match' });
-    }
-
+    // Check if email already exists
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ message: 'Email already registered' });
     }
 
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ✅ Check ADMIN_EMAIL from environment
+    // Role check (ADMIN_EMAIL from env is admin, all others = USER)
     const role =
-      email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase()
+      email.toLowerCase().trim() ===
+      process.env.ADMIN_EMAIL.toLowerCase().trim()
         ? 'ADMIN'
         : 'USER';
 
@@ -27,9 +28,15 @@ export const register = async (req, res) => {
       data: { name, email, password: hashedPassword, role },
     });
 
-    res
-      .status(201)
-      .json({ message: 'User registered successfully', user: newUser });
+    res.status(201).json({
+      message: 'User registered successfully',
+      user: {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+      },
+    });
   } catch (error) {
     res
       .status(500)
@@ -37,27 +44,24 @@ export const register = async (req, res) => {
   }
 };
 
+// ✅ LOGIN
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // 1️⃣ Find user by email
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // 2️⃣ Compare passwords
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)
       return res.status(400).json({ message: 'Invalid credentials' });
 
-    // 3️⃣ Generate JWT token
     const token = jwt.sign(
       { id: user.id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
 
-    // 4️⃣ Send response with role info
     res.json({
       message: 'Login successful',
       token,
@@ -66,5 +70,131 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Error logging in', error: error.message });
+  }
+};
+
+// 🔹 Setup mail transporter (Gmail or SMTP)
+export const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER, // your Gmail address
+    pass: process.env.EMAIL_PASS, // App Password generated from Google Account
+  },
+  tls: {
+    rejectUnauthorized: false, // allow self-signed certs
+  },
+});
+
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('Email server connection error:', error);
+  } else {
+    console.log('Email server is ready to take messages');
+  }
+});
+
+// ✅ FORGOT PASSWORD - Send OTP
+export const forgotPasswordOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiry = new Date(Date.now() + 1 * 60 * 1000); // 1 min
+
+    await prisma.user.update({
+      where: { email },
+      data: { otp, otpExpiry, otpCount: 0 }, // reset count for new OTP
+    });
+
+    // Send OTP email
+    await transporter.sendMail({
+      from: `"Support" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: 'Password Reset OTP',
+      html: `
+        <div style="font-family: sans-serif; line-height: 1.5;">
+          <h2>Password Reset OTP</h2>
+          <p>Your OTP for password reset is:</p>
+          <h1 style="color: #007bff;">${otp}</h1>
+          <p>It will expire in 15 minutes.</p>
+          <p>If you did not request this, please ignore this email.</p>
+        </div>
+      `,
+    });
+
+    res.json({ message: 'OTP sent to email' });
+  } catch (error) {
+    console.error('Error sending OTP:', error);
+    res
+      .status(500)
+      .json({ message: 'Error sending OTP', error: error.message });
+  }
+};
+
+export const verifyOTP = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Check max attempts
+    if ((user.otpCount || 0) >= 4) {
+      return res
+        .status(400)
+        .json({ message: 'Maximum OTP attempts reached. Request a new OTP.' });
+    }
+
+    // Check OTP validity
+    if (user.otp !== otp || new Date() > user.otpExpiry) {
+      // increment otpCount
+      await prisma.user.update({
+        where: { email },
+        data: { otpCount: (user.otpCount || 0) + 1 },
+      });
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    // OTP is valid → reset otpCount
+    await prisma.user.update({
+      where: { email },
+      data: { otpCount: 0 },
+    });
+
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+      expiresIn: '15m',
+    });
+
+    res.json({ message: 'OTP verified', token });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: 'Error verifying OTP', error: error.message });
+  }
+};
+
+
+export const resetPasswordWithOTP = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { newPassword } = req.body;
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password and clear OTP
+    await prisma.user.update({
+      where: { id: decoded.id },
+      data: { password: hashedPassword, otp: null, otpExpiry: null },
+    });
+
+    res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    res
+      .status(400)
+      .json({ message: 'Invalid or expired token', error: error.message });
   }
 };

@@ -16,7 +16,7 @@ import {
 
 const router = express.Router();
 
-// ➕ Add Category
+// Add Category
 router.post(
   '/add',
   uploadCategoryFiles,
@@ -25,7 +25,7 @@ router.post(
   createCategory
 );
 
-// ✏️ Update Category
+//  Update Category
 router.put(
   '/update/:id',
   uploadCategoryFiles,
@@ -34,14 +34,13 @@ router.put(
   updateCategory
 );
 
-// 📋 Get all categories
+//  Get all categories
 router.get('/list', getCategories);
 
-// 🔍 Get category by ID
+// Get category by ID
 router.get('/get/:id', getCategoryById);
 
-// ❌ Delete category
+// Delete category
 router.delete('/delete/:id', deleteCategory);
-
 
 export default router;

@@ -18,5 +18,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
 
+console.log("ADMIN_EMAIL:", process.env.ADMIN_EMAIL);
+
 export default app;
 
