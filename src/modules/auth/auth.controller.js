@@ -119,12 +119,14 @@ export const forgotPasswordOTP = async (req, res) => {
       data: { otp, otpExpiry, otpCount: 0 }, // reset count for new OTP
     });
 
-    // ✅ Send OTP email
-    await transporter.sendMail({
-      from: `"Support" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: 'Password Reset OTP',
-      html: `
+  import path from 'path';
+
+  // ✅ Send OTP email
+  await transporter.sendMail({
+    from: `"Support" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: 'Password Reset OTP',
+    html: `
  <!DOCTYPE html>
 <html>
   <head>
@@ -187,19 +189,20 @@ export const forgotPasswordOTP = async (req, res) => {
   </body>
 </html>
   `,
-      attachments: [
-        {
-          filename: 'bg-image.png',
-          path: '../IMAGE/bg-iamge.png',
-          cid: 'bgimage', // same as cid in HTML
-        },
-        {
-          filename: 'logo-nystai.png',
-          path: '../IMAGE/logo-nystai.png',
-          cid: 'logoimage', // same as cid in HTML
-        },
-      ],
-    });
+    attachments: [
+      {
+        filename: 'bg-image.png',
+        path: path.resolve('src/IMAGE/bg-image.png'), // ✅ fixed path
+        cid: 'bgimage',
+      },
+      {
+        filename: 'logo-nystai.png',
+        path: path.resolve('src/IMAGE/logo-nystai.png'), // ✅ fixed path
+        cid: 'logoimage',
+      },
+    ],
+  });
+
 
     res.json({ message: 'OTP sent to email' });
   } catch (error) {
