@@ -125,8 +125,8 @@ export const forgotPasswordOTP = async (req, res) => {
       to: email,
       subject: 'Password Reset OTP',
       html: `
-  <!DOCTYPE html>
-  <html>
+ <!DOCTYPE html>
+<html>
   <head>
     <meta charset="UTF-8" />
     <title>Password Reset OTP</title>
@@ -134,15 +134,22 @@ export const forgotPasswordOTP = async (req, res) => {
   <body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f4f4f4;">
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
       <tr>
-        <td align="center" style="background-color:#f4f4f4; padding:40px 0;">
-          
-          <!-- Outer Card -->
-          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="background:#fff; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.1); overflow:hidden;">
-            
-            <!-- Red Banner -->
+        <td align="center" style="padding:0;">
+
+          <!-- Background section -->
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:url('cid:bgimage') no-repeat center top / cover; height:220px;">
             <tr>
-              <td align="center" style="background:#ff4c4c; height:120px;">
-                <img src="https://nystai.com/logo.png" alt="NYSTAI Logo" width="140" style="margin-top:20px;" />
+              <td align="center" valign="middle" style="height:220px;">&nbsp;</td>
+            </tr>
+          </table>
+
+          <!-- Overlay Card -->
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin-top:-140px;padding: 40px; background:#fff; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.1); overflow:hidden;">
+            
+            <!-- Logo -->
+            <tr>
+              <td align="center" style="padding:20px;">
+                <img src="cid:logoimage" alt="NYSTAI Logo" width="160" style="display:block; margin:0 auto;" />
               </td>
             </tr>
 
@@ -155,10 +162,10 @@ export const forgotPasswordOTP = async (req, res) => {
                 }..!</p>
                 <p style="margin:12px 0; font-size:14px; color:#666; line-height:1.5;">
                   Use the following OTP to reset your password.<br/>
-                  OTP is valid for <strong>5 minutes</strong>. Do not share this code with others,
+                  OTP is valid for <strong>1 minutes</strong>. Do not share this code with others,
                   including NYSTAI employees.
                 </p>
-                
+
                 <!-- OTP -->
                 <p style="font-size:38px; font-weight:bold; color:#d4a017; letter-spacing:12px; margin:24px 0;">
                   ${otp}
@@ -178,8 +185,20 @@ export const forgotPasswordOTP = async (req, res) => {
       </tr>
     </table>
   </body>
-  </html>
+</html>
   `,
+      attachments: [
+        {
+          filename: 'bg-image.png',
+          path: 'G:/Nystai-com-dashboard/nystai-backend/src/IMAGE/bg-image.png',
+          cid: 'bgimage', // same as cid in HTML
+        },
+        {
+          filename: 'logo-nystai.png',
+          path: 'G:/Nystai-com-dashboard/nystai-backend/src/IMAGE/logo-nystai.png',
+          cid: 'logoimage', // same as cid in HTML
+        },
+      ],
     });
 
     res.json({ message: 'OTP sent to email' });
