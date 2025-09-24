@@ -84,11 +84,11 @@ export const login = async (req, res) => {
 export const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER, 
-    pass: process.env.EMAIL_PASS, 
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
   tls: {
-    rejectUnauthorized: false, 
+    rejectUnauthorized: false,
   },
 });
 
@@ -119,13 +119,12 @@ export const forgotPasswordOTP = async (req, res) => {
       data: { otp, otpExpiry, otpCount: 0 }, // reset count for new OTP
     });
 
-
-  // ✅ Send OTP email
-  await transporter.sendMail({
-    from: `"Support" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: 'Password Reset OTP',
-    html: `
+    // ✅ Send OTP email
+    await transporter.sendMail({
+      from: `"Support" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: 'Password Reset OTP',
+      html: `
  <!DOCTYPE html>
 <html>
   <head>
@@ -188,20 +187,19 @@ export const forgotPasswordOTP = async (req, res) => {
   </body>
 </html>
   `,
-    attachments: [
-      {
-        filename: 'bg-image.png',
-        path: path.resolve('src/IMAGE/bg-image.png'), // ✅ fixed path
-        cid: 'bgimage',
-      },
-      {
-        filename: 'logo-nystai.png',
-        path: path.resolve('src/IMAGE/logo-nystai.png'), // ✅ fixed path
-        cid: 'logoimage',
-      },
-    ],
-  });
-
+      attachments: [
+        {
+          filename: 'bg-image.png',
+          path: path.join(__dirname, '../IMAGE/bg-image.png'), // ✅ safer for server
+          cid: 'bgimage',
+        },
+        {
+          filename: 'logo-nystai.png',
+          path: path.join(__dirname, '../IMAGE/logo-nystai.png'), // ✅ safer for server
+          cid: 'logoimage',
+        },
+      ],
+    });
 
     res.json({ message: 'OTP sent to email' });
   } catch (error) {
