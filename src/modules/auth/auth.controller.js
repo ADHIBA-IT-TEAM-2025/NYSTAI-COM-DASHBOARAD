@@ -190,12 +190,12 @@ export const forgotPasswordOTP = async (req, res) => {
       attachments: [
         {
           filename: 'bg-image.png',
-          path: 'G:/Nystai-com-dashboard/nystai-backend/src/IMAGE/bg-image.png',
+          path: '../IMAGE/bg-iamge.png',
           cid: 'bgimage', // same as cid in HTML
         },
         {
           filename: 'logo-nystai.png',
-          path: 'G:/Nystai-com-dashboard/nystai-backend/src/IMAGE/logo-nystai.png',
+          path: '../IMAGE/logo-nystai.png',
           cid: 'logoimage', // same as cid in HTML
         },
       ],
