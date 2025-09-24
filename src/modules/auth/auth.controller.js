@@ -104,25 +104,27 @@ transporter.verify((error, success) => {
 export const forgotPasswordOTP = async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await prisma.user.findUnique({ where: { email } });
 
+    // Find user by email
+    const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     // Generate 4-digit OTP
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    const otpExpiry = new Date(Date.now() + 1 * 60 * 1000); // 1 min
+    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // ✅ 5 minutes validity
 
+    // Save OTP to DB
     await prisma.user.update({
       where: { email },
       data: { otp, otpExpiry, otpCount: 0 }, // reset count for new OTP
     });
 
-    // Send OTP email
-   await transporter.sendMail({
-     from: `"Support" <${process.env.EMAIL_USER}>`,
-     to: email,
-     subject: 'Password Reset OTP',
-     html: `
+    // ✅ Send OTP email
+    await transporter.sendMail({
+      from: `"Support" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: 'Password Reset OTP',
+      html: `
   <!DOCTYPE html>
   <html>
   <head>
@@ -149,7 +151,7 @@ export const forgotPasswordOTP = async (req, res) => {
               <td align="center" style="padding:30px 40px;">
                 <h2 style="margin:0; font-size:22px; font-weight:600; color:#555;">YOUR OTP</h2>
                 <p style="margin:12px 0; font-size:16px; color:#333;">Hey ${
-                  name || 'User'
+                  user.name || 'User'
                 }..!</p>
                 <p style="margin:12px 0; font-size:14px; color:#666; line-height:1.5;">
                   Use the following OTP to reset your password.<br/>
@@ -178,12 +180,11 @@ export const forgotPasswordOTP = async (req, res) => {
   </body>
   </html>
   `,
-   });
-
+    });
 
     res.json({ message: 'OTP sent to email' });
   } catch (error) {
-    console.error('Error sending OTP:', error);
+    console.error('❌ Error sending OTP:', error);
     res
       .status(500)
       .json({ message: 'Error sending OTP', error: error.message });
