@@ -2,7 +2,7 @@ import prisma from '../../config/db.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
-
+import path from 'path';
 // REGISTER
 export const register = async (req, res) => {
   try {
@@ -119,7 +119,6 @@ export const forgotPasswordOTP = async (req, res) => {
       data: { otp, otpExpiry, otpCount: 0 }, // reset count for new OTP
     });
 
-  import path from 'path';
 
   // ✅ Send OTP email
   await transporter.sendMail({
