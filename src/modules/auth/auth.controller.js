@@ -137,8 +137,7 @@ export const forgotPasswordOTP = async (req, res) => {
         <td align="center" style="padding:0;">
 
           <!-- Background section -->
-          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" 
-                 style="background:url('https://yq8r2ictoc4hzxtd.public.blob.vercel-storage.com/MAI-IMAGE/bg-iamge.png') no-repeat center top / cover; height:220px;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" >
             <tr>
               <td align="center" valign="middle" style="height:220px;">&nbsp;</td>
             </tr>
