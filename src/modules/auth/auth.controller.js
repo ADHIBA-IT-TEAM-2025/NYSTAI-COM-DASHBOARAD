@@ -84,11 +84,11 @@ export const login = async (req, res) => {
 export const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER, // your Gmail address
-    pass: process.env.EMAIL_PASS, // App Password generated from Google Account
+    user: process.env.EMAIL_USER, 
+    pass: process.env.EMAIL_PASS, 
   },
   tls: {
-    rejectUnauthorized: false, // allow self-signed certs
+    rejectUnauthorized: false, 
   },
 });
 
@@ -118,20 +118,68 @@ export const forgotPasswordOTP = async (req, res) => {
     });
 
     // Send OTP email
-    await transporter.sendMail({
-      from: `"Support" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: 'Password Reset OTP',
-      html: `
-        <div style="font-family: sans-serif; line-height: 1.5;">
-          <h2>Password Reset OTP</h2>
-          <p>Your OTP for password reset is:</p>
-          <h1 style="color: #007bff;">${otp}</h1>
-          <p>It will expire in 15 minutes.</p>
-          <p>If you did not request this, please ignore this email.</p>
-        </div>
-      `,
-    });
+   await transporter.sendMail({
+     from: `"Support" <${process.env.EMAIL_USER}>`,
+     to: email,
+     subject: 'Password Reset OTP',
+     html: `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Password Reset OTP</title>
+  </head>
+  <body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f4f4f4;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+      <tr>
+        <td align="center" style="background-color:#f4f4f4; padding:40px 0;">
+          
+          <!-- Outer Card -->
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="background:#fff; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.1); overflow:hidden;">
+            
+            <!-- Red Banner -->
+            <tr>
+              <td align="center" style="background:#ff4c4c; height:120px;">
+                <img src="https://nystai.com/logo.png" alt="NYSTAI Logo" width="140" style="margin-top:20px;" />
+              </td>
+            </tr>
+
+            <!-- Content -->
+            <tr>
+              <td align="center" style="padding:30px 40px;">
+                <h2 style="margin:0; font-size:22px; font-weight:600; color:#555;">YOUR OTP</h2>
+                <p style="margin:12px 0; font-size:16px; color:#333;">Hey ${
+                  name || 'User'
+                }..!</p>
+                <p style="margin:12px 0; font-size:14px; color:#666; line-height:1.5;">
+                  Use the following OTP to reset your password.<br/>
+                  OTP is valid for <strong>5 minutes</strong>. Do not share this code with others,
+                  including NYSTAI employees.
+                </p>
+                
+                <!-- OTP -->
+                <p style="font-size:38px; font-weight:bold; color:#d4a017; letter-spacing:12px; margin:24px 0;">
+                  ${otp}
+                </p>
+
+                <p style="font-size:14px; color:#888; margin:20px 0;">
+                  If you didn’t request this, you can ignore this email.
+                </p>
+                <p style="font-size:13px; color:#666; margin-top:30px;">
+                  Need help? <a href="https://nystai.com" style="color:#ff4c4c; text-decoration:none;">Ask at Nystai.com</a>
+                </p>
+              </td>
+            </tr>
+          </table>
+
+        </td>
+      </tr>
+    </table>
+  </body>
+  </html>
+  `,
+   });
+
 
     res.json({ message: 'OTP sent to email' });
   } catch (error) {
