@@ -49,24 +49,31 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Find user by email
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
+    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
+    if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
+    }
 
+    // Generate JWT token
     const token = jwt.sign(
       { id: user.id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
 
+    // Send response with role-based redirect URL
     res.json({
       message: 'Login successful',
       token,
       role: user.role,
-      redirectUrl: user.role === 'ADMIN' ? '/admin/dashboard' : '/',
+      redirectUrl: user.role === 'ADMIN' ? '/admin' : '/nystai-product', // updated redirect
     });
   } catch (error) {
     res.status(500).json({ message: 'Error logging in', error: error.message });
