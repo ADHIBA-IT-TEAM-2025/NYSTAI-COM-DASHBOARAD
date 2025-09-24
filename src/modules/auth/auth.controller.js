@@ -108,8 +108,8 @@ export const forgotPasswordOTP = async (req, res) => {
 
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Generate 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate 4-digit OTP
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
     const otpExpiry = new Date(Date.now() + 1 * 60 * 1000); // 1 min
 
     await prisma.user.update({
