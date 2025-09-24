@@ -125,7 +125,7 @@ export const forgotPasswordOTP = async (req, res) => {
       to: email,
       subject: 'Password Reset OTP',
       html: `
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
   <head>
     <meta charset="UTF-8" />
@@ -137,7 +137,8 @@ export const forgotPasswordOTP = async (req, res) => {
         <td align="center" style="padding:0;">
 
           <!-- Background section -->
-          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:url('cid:bgimage') no-repeat center top / cover; height:220px;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" 
+                 style="background:url('https://yq8r2ictoc4hzxtd.public.blob.vercel-storage.com/MAI-IMAGE/bg-iamge.png') no-repeat center top / cover; height:220px;">
             <tr>
               <td align="center" valign="middle" style="height:220px;">&nbsp;</td>
             </tr>
@@ -149,7 +150,7 @@ export const forgotPasswordOTP = async (req, res) => {
             <!-- Logo -->
             <tr>
               <td align="center" style="padding:20px;">
-                <img src="cid:logoimage" alt="NYSTAI Logo" width="160" style="display:block; margin:0 auto;" />
+                <img src="https://yq8r2ictoc4hzxtd.public.blob.vercel-storage.com/MAI-IMAGE/logo-nystai.png" alt="NYSTAI Logo" width="160" style="display:block; margin:0 auto;" />
               </td>
             </tr>
 
@@ -162,7 +163,7 @@ export const forgotPasswordOTP = async (req, res) => {
                 }..!</p>
                 <p style="margin:12px 0; font-size:14px; color:#666; line-height:1.5;">
                   Use the following OTP to reset your password.<br/>
-                  OTP is valid for <strong>1 minutes</strong>. Do not share this code with others,
+                  OTP is valid for <strong>1 minute</strong>. Do not share this code with others,
                   including NYSTAI employees.
                 </p>
 
@@ -186,19 +187,8 @@ export const forgotPasswordOTP = async (req, res) => {
     </table>
   </body>
 </html>
-  `,
-      attachments: [
-        {
-          filename: 'bg-image.png',
-          path: path.join(__dirname, '../IMAGE/bg-image.png'), // ✅ safer for server
-          cid: 'bgimage',
-        },
-        {
-          filename: 'logo-nystai.png',
-          path: path.join(__dirname, '../IMAGE/logo-nystai.png'), // ✅ safer for server
-          cid: 'logoimage',
-        },
-      ],
+`,
+      // No attachments needed now
     });
 
     res.json({ message: 'OTP sent to email' });
