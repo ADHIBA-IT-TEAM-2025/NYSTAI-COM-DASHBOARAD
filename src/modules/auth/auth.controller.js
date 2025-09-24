@@ -171,7 +171,6 @@ export const forgotPasswordOTP = async (req, res) => {
   </table>
 </body>
 </html>
-
 `,
       // No attachments needed now
     });
