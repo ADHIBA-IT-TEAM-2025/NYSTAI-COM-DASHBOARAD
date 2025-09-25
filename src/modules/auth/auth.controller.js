@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
 import path from 'path';
-// REGISTER
+
 export const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -44,7 +44,6 @@ export const register = async (req, res) => {
   }
 };
 
-// ✅ LOGIN
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -80,15 +79,11 @@ export const login = async (req, res) => {
   }
 };
 
-// 🔹 Setup mail transporter (Gmail or SMTP)
-export const transporter = nodemailer.createTransport({
-  service: 'gmail',
+const transporter = nodemailer.createTransport({
+  service: "gmail",
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false,
+    user: process.env.EMAIL_USER, // Your email address
+    pass: process.env.EMAIL_PASSWORD, // Your email app password
   },
 });
 
@@ -100,7 +95,6 @@ transporter.verify((error, success) => {
   }
 });
 
-// ✅ FORGOT PASSWORD - Send OTP
 export const forgotPasswordOTP = async (req, res) => {
   try {
     const { email } = req.body;
@@ -111,7 +105,7 @@ export const forgotPasswordOTP = async (req, res) => {
 
     // Generate 4-digit OTP
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // ✅ 5 minutes validity
+    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); //  5 minutes validity
 
     // Save OTP to DB
     await prisma.user.update({
@@ -119,7 +113,7 @@ export const forgotPasswordOTP = async (req, res) => {
       data: { otp, otpExpiry, otpCount: 0 }, // reset count for new OTP
     });
 
-    // ✅ Send OTP email
+    //  Send OTP email
     await transporter.sendMail({
       from: `"Support" <${process.env.EMAIL_USER}>`,
       to: email,
