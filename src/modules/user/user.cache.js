@@ -1,9 +1,7 @@
 import redis from '../../config/redis.js';
 import prisma from '../../config/db.js';
-
 const USER_CACHE_KEY = 'users:all';
 
-// Get all users with cache
 export const getCachedUsers = async () => {
   try {
     // Check Redis first
@@ -35,12 +33,11 @@ export const getCachedUsers = async () => {
   }
 };
 
-// Invalidate users cache
 export const clearUserCache = async () => {
   try {
     await redis.del(USER_CACHE_KEY);
     console.log('🗑️ Users cache cleared');
   } catch (err) {
-    console.error('❌ Error clearing user cache:', err);
+    console.error('❌ Error clearing users cache:', err);
   }
 };

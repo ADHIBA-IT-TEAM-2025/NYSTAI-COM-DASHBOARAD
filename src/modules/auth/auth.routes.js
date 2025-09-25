@@ -13,17 +13,12 @@ import {
   resetPasswordValidation,
   verifyOTPValidation,
 } from '../../middlewares/auth.validation.js';
-
 const router = express.Router();
 
 router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
 router.post('/forgot-password', forgotPasswordValidation, forgotPasswordOTP);
 router.post('/verify-otp', verifyOTPValidation, verifyOTP);
-router.post(
-  '/reset-password/:token',
-  resetPasswordValidation,
-  resetPasswordWithOTP
-);
+router.post('/reset-password/:token',resetPasswordValidation,resetPasswordWithOTP);
 
 export default router;
