@@ -1,15 +1,14 @@
 import path from 'path';
 import prisma from '../../config/db.js';
 import { put } from '@vercel/blob';
+import { getCachedCategories, clearCategoryCache } from './category.cache.js';
 
-// Helper function to generate random suffix
 function randomSuffix(length = 6) {
   return Math.random()
     .toString(36)
     .substring(2, 2 + length);
 }
 
-// Create a new category
 export const createCategory = async (req, res) => {
   try {
     const { name } = req.body;
@@ -48,7 +47,7 @@ export const createCategory = async (req, res) => {
     const category = await prisma.category.create({
       data: { name, bannerUrl, iconUrl },
     });
-
+    await clearCategoryCache(); // invalidate cache
     res.status(201).json(category);
   } catch (err) {
     console.error('Error creating category:', err);
@@ -60,26 +59,17 @@ export const createCategory = async (req, res) => {
   }
 };
 
-// Get all categories without products
 export const getCategories = async (req, res) => {
   try {
-    const categories = await prisma.category.findMany({
-      include: {
-        products: {
-          include: {
-            images: true, // include product images
-          },
-        },
-      },
-    });
+    const categories = await getCachedCategories();
 
-    // Remove empty products arrays for cleaner response
+    // Clean response (remove empty products)
     const filtered = categories.map(cat => ({
       id: cat.id,
       name: cat.name,
       bannerUrl: cat.bannerUrl,
       iconUrl: cat.iconUrl,
-      products: cat.products.length > 0 ? cat.products : undefined,
+      products: cat.products?.length > 0 ? cat.products : undefined,
     }));
 
     res.json(filtered);
@@ -89,7 +79,6 @@ export const getCategories = async (req, res) => {
   }
 };
 
-// Get single category by ID without products
 export const getCategoryById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -124,7 +113,6 @@ export const getCategoryById = async (req, res) => {
   }
 };
 
-// Update category
 export const updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
@@ -135,7 +123,7 @@ export const updateCategory = async (req, res) => {
     });
 
     if (!existing) {
-      return res.status(404).json({ message: "Category not found" });
+      return res.status(404).json({ message: 'Category not found' });
     }
 
     let bannerUrl = existing.bannerUrl;
@@ -147,7 +135,7 @@ export const updateCategory = async (req, res) => {
       const ext = path.extname(bannerFile.originalname);
       const fileName = `category-banner-${Date.now()}-${randomSuffix()}${ext}`;
       const blob = await put(`categories/${fileName}`, bannerFile.buffer, {
-        access: "public",
+        access: 'public',
         token: process.env.VERCEL_BLOB_RW_TOKEN,
       });
       bannerUrl = blob.url;
@@ -159,7 +147,7 @@ export const updateCategory = async (req, res) => {
       const ext = path.extname(iconFile.originalname);
       const fileName = `category-icon-${Date.now()}-${randomSuffix()}${ext}`;
       const blob = await put(`categories/${fileName}`, iconFile.buffer, {
-        access: "public",
+        access: 'public',
         token: process.env.VERCEL_BLOB_RW_TOKEN,
       });
       iconUrl = blob.url;
@@ -167,21 +155,16 @@ export const updateCategory = async (req, res) => {
 
     const updated = await prisma.category.update({
       where: { id: parseInt(id) },
-      data: {
-        name: name || existing.name,
-        bannerUrl,
-        iconUrl,
-      },
+      data: { name: name || existing.name, bannerUrl, iconUrl },
     });
-
+    await clearCategoryCache();
     res.json(updated);
   } catch (err) {
-    console.error("Error updating category:", err);
+    console.error('Error updating category:', err);
     res.status(500).json({ message: err.message });
   }
 };
 
-// Delete category
 export const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
@@ -198,15 +181,14 @@ export const deleteCategory = async (req, res) => {
     }
 
     // Delete if exists
-    await prisma.category.delete({
-      where: { id: Number(id) },
-    });
-
+    // After deleting
+    await prisma.category.delete({ where: { id: Number(id) } });
+    await clearCategoryCache();
     res.json({ message: `Category with id ${id} deleted successfully` });
   } catch (error) {
-    console.error("Error deleting category:", error);
+    console.error('Error deleting category:', error);
     res.status(500).json({
-      message: "Failed to delete category",
+      message: 'Failed to delete category',
       error: error.message,
     });
   }
