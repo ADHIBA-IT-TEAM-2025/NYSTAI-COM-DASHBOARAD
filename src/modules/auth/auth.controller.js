@@ -86,25 +86,21 @@ export const login = async (req, res) => {
 };
 
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: Number(process.env.EMAIL_PORT),
-  secure: process.env.EMAIL_SECURE === 'true',
+  service: 'gmail', // Use Gmail SMTP
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS, // must be app password
-  },
-  tls: {
-    rejectUnauthorized: false,
+    pass: process.env.EMAIL_PASS, // must be Gmail app password
   },
 });
 
 transporter.verify((err, success) => {
   if (err) {
-    console.error(' Email server connection error:', err.message);
+    console.error('Email server connection error:', err.message);
   } else {
-    console.log(' Email server ready');
+    console.log('Email server ready');
   }
 });
+
 
 export const forgotPasswordOTP = async (req, res) => {
   try {
@@ -174,7 +170,7 @@ export const forgotPasswordOTP = async (req, res) => {
 
     res.json({ message: 'OTP sent to email' });
   } catch (error) {
-    console.error(' OTP email error:', error.message);
+    console.error('OTP email error:', error.message);
     res
       .status(500)
       .json({ message: 'Error sending OTP', error: error.message });
