@@ -1,20 +1,23 @@
 import prisma from '../../config/db.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { getCachedUser, setCachedUser, clearCachedUser } from './auth.cache.js';
 import nodemailer from 'nodemailer';
-
+import path from 'path';
+// REGISTER
 export const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
+    // Check if email already exists
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ message: 'Email already registered' });
     }
 
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Role check (ADMIN_EMAIL from env is admin, all others = USER)
     const role =
       email.toLowerCase().trim() ===
       process.env.ADMIN_EMAIL.toLowerCase().trim()
@@ -23,14 +26,6 @@ export const register = async (req, res) => {
 
     const newUser = await prisma.user.create({
       data: { name, email, password: hashedPassword, role },
-    });
-    await clearCachedUser(); // invalidate cache
-
-    await setCachedUser(email, {
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role,
     });
 
     res.status(201).json({
@@ -49,51 +44,45 @@ export const register = async (req, res) => {
   }
 };
 
+// ✅ LOGIN
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    let user = await getCachedUser(email);
-
+    // Find user by email
+    const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      user = await prisma.user.findUnique({ where: { email } });
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      await setCachedUser(email, user);
+      return res.status(404).json({ message: 'User not found' });
     }
 
+    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
+    // Generate JWT token
     const token = jwt.sign(
       { id: user.id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
 
+    // Send response with role-based redirect URL
     res.json({
       message: 'Login successful',
       token,
       role: user.role,
-      redirectUrl: user.role === 'ADMIN' ? '/admin' : '/nystai-product',
+      redirectUrl: user.role === 'ADMIN' ? '/admin' : '/nystai-product', // updated redirect
     });
   } catch (error) {
     res.status(500).json({ message: 'Error logging in', error: error.message });
   }
 };
 
-// Debug logging for email configuration
-console.log('EMAIL_USER:', process.env.EMAIL_USER);
-console.log('EMAIL_PASS exists:', !!process.env.EMAIL_PASS);
-console.log('NODE_ENV:', process.env.NODE_ENV);
-
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
+// 🔹 Setup mail transporter (Gmail or SMTP)
+export const transporter = nodemailer.createTransport({
+  service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -101,56 +90,37 @@ const transporter = nodemailer.createTransport({
   tls: {
     rejectUnauthorized: false,
   },
-  debug: true, // Enable debug logging
-  logger: true, // Enable logger
 });
 
-// Enhanced verification with better error handling
-transporter.verify((err, success) => {
-  if (err) {
-    console.error('Email server connection error:', err.message);
-    console.error('Full error:', err);
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('Email server connection error:', error);
   } else {
-    console.log('Email server ready ✅');
-    console.log('SMTP connection successful');
+    console.log('Email server is ready to take messages');
   }
 });
 
+// ✅ FORGOT PASSWORD - Send OTP
 export const forgotPasswordOTP = async (req, res) => {
   try {
     const { email } = req.body;
 
-    console.log('Attempting to send OTP to:', email);
-    console.log('Using EMAIL_USER:', process.env.EMAIL_USER);
-
+    // Find user by email
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.status(404).json({ message: 'User not found' });
 
+    // Generate 4-digit OTP
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    const otpExpiry = new Date(Date.now() + 1 * 60 * 1000);
+    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // ✅ 5 minutes validity
 
+    // Save OTP to DB
     await prisma.user.update({
       where: { email },
-      data: { otp, otpExpiry, otpCount: 0 },
+      data: { otp, otpExpiry, otpCount: 0 }, // reset count for new OTP
     });
 
-    console.log('Generated OTP:', otp);
-    console.log('Attempting to send email...');
-
-    // Test connection before sending
-    await new Promise((resolve, reject) => {
-      transporter.verify((error, success) => {
-        if (error) {
-          console.error('SMTP verification failed:', error);
-          reject(error);
-        } else {
-          console.log('SMTP verification successful');
-          resolve(success);
-        }
-      });
-    });
-
-    const mailOptions = {
+    // ✅ Send OTP email
+    await transporter.sendMail({
       from: `"Support" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: 'Password Reset OTP',
@@ -162,15 +132,18 @@ export const forgotPasswordOTP = async (req, res) => {
     <title>Password Reset OTP</title>
   </head>
 <body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f4f4f4; height:100%; width:100%;">
+  <!-- Outer Table to center vertically and horizontally -->
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" height="100%">
     <tr>
       <td align="center" valign="middle">
+
+        <!-- White Card Section -->
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600"
                style="background:#fff; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.1);">
           <tr>
             <td style="padding:40px 30px 60px 30px; text-align:center;">
-              <img src="https://yq8r2ictoc4hzxtd.public.blob.vercel-storage.com/MAI-IMAGE/logo-nystai.png"
-                    alt="NYSTAI Logo" width="160" style="display:block; margin:0 auto;" />
+              <img src="https://yq8r2ictoc4hzxtd.public.blob.vercel-storage.com/MAI-IMAGE/logo-nystai.png" 
+                   alt="NYSTAI Logo" width="160" style="display:block; margin:0 auto;" />
               <h2 style="margin:20px 0 0 0; font-size:22px; font-weight:600; color:#555;">YOUR OTP</h2>
               <p style="margin:12px 0; font-size:16px; color:#333;">Hey ${
                 user.name || 'User'
@@ -184,7 +157,7 @@ export const forgotPasswordOTP = async (req, res) => {
                 ${otp}
               </p>
               <p style="font-size:14px; color:#888; margin:20px 0;">
-                If you didn't request this, you can ignore this email.
+                If you didn’t request this, you can ignore this email.
               </p>
               <p style="font-size:13px; color:#666; margin-top:30px;">
                 Need help? <a href="https://nystai.com" style="color:#ff4c4c; text-decoration:none;">Ask at Nystai.com</a>
@@ -192,37 +165,22 @@ export const forgotPasswordOTP = async (req, res) => {
             </td>
           </tr>
         </table>
+
       </td>
     </tr>
   </table>
 </body>
 </html>
-      `,
-    };
-
-    console.log('Mail options prepared, sending...');
-    const result = await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully:', result.messageId);
+`,
+      // No attachments needed now
+    });
 
     res.json({ message: 'OTP sent to email' });
   } catch (error) {
-    console.error('OTP email error:', error.message);
-    console.error('Full error stack:', error.stack);
-
-    // More specific error messages
-    if (error.code === 'ECONNECTION') {
-      console.error('Connection error - check network/firewall');
-    } else if (error.code === 'EAUTH') {
-      console.error('Authentication error - check email/password');
-    } else if (error.code === 'ETIMEDOUT') {
-      console.error('Timeout error - check SMTP settings');
-    }
-
-    res.status(500).json({
-      message: 'Error sending OTP',
-      error: error.message,
-      code: error.code || 'UNKNOWN',
-    });
+    console.error('❌ Error sending OTP:', error);
+    res
+      .status(500)
+      .json({ message: 'Error sending OTP', error: error.message });
   }
 };
 
@@ -232,11 +190,16 @@ export const verifyOTP = async (req, res) => {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.status(404).json({ message: 'User not found' });
 
+    // Check max attempts
     if ((user.otpCount || 0) >= 4) {
-      return res.status(400).json({ message: 'Maximum OTP attempts reached.' });
+      return res
+        .status(400)
+        .json({ message: 'Maximum OTP attempts reached. Request a new OTP.' });
     }
 
+    // Check OTP validity
     if (user.otp !== otp || new Date() > user.otpExpiry) {
+      // increment otpCount
       await prisma.user.update({
         where: { email },
         data: { otpCount: (user.otpCount || 0) + 1 },
@@ -244,6 +207,7 @@ export const verifyOTP = async (req, res) => {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
 
+    // OTP is valid → reset otpCount
     await prisma.user.update({
       where: { email },
       data: { otpCount: 0 },
@@ -269,6 +233,7 @@ export const resetPasswordWithOTP = async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
+    // Update password and clear OTP
     await prisma.user.update({
       where: { id: decoded.id },
       data: { password: hashedPassword, otp: null, otpExpiry: null },
