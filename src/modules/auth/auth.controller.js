@@ -85,12 +85,18 @@ export const login = async (req, res) => {
   }
 };
 
+// Replace your transporter configuration with this:
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // Use Gmail SMTP
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // true for 465, false for other ports
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS, // must be Gmail app password
   },
+  tls: {
+    rejectUnauthorized: false
+  }
 });
 
 transporter.verify((err, success) => {
@@ -100,7 +106,6 @@ transporter.verify((err, success) => {
     console.log('Email server ready');
   }
 });
-
 
 export const forgotPasswordOTP = async (req, res) => {
   try {
@@ -137,12 +142,10 @@ export const forgotPasswordOTP = async (req, res) => {
                style="background:#fff; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.1);">
           <tr>
             <td style="padding:40px 30px 60px 30px; text-align:center;">
-              <img src="https://yq8r2ictoc4hzxtd.public.blob.vercel-storage.com/MAI-IMAGE/logo-nystai.png" 
-                   alt="NYSTAI Logo" width="160" style="display:block; margin:0 auto;" />
+              <img src="https://yq8r2ictoc4hzxtd.public.blob.vercel-storage.com/MAI-IMAGE/logo-nystai.png"
+                    alt="NYSTAI Logo" width="160" style="display:block; margin:0 auto;" />
               <h2 style="margin:20px 0 0 0; font-size:22px; font-weight:600; color:#555;">YOUR OTP</h2>
-              <p style="margin:12px 0; font-size:16px; color:#333;">Hey ${
-                user.name || 'User'
-              }..!</p>
+              <p style="margin:12px 0; font-size:16px; color:#333;">Hey ${user.name || 'User'}..!</p>
               <p style="margin:12px 0; font-size:14px; color:#666; line-height:1.5;">
                 Use the following OTP to reset your password.<br/>
                 OTP is valid for <strong>1 minute</strong>. Do not share this code with others,
@@ -152,7 +155,7 @@ export const forgotPasswordOTP = async (req, res) => {
                 ${otp}
               </p>
               <p style="font-size:14px; color:#888; margin:20px 0;">
-                If you didn’t request this, you can ignore this email.
+                If you didn't request this, you can ignore this email.
               </p>
               <p style="font-size:13px; color:#666; margin-top:30px;">
                 Need help? <a href="https://nystai.com" style="color:#ff4c4c; text-decoration:none;">Ask at Nystai.com</a>
