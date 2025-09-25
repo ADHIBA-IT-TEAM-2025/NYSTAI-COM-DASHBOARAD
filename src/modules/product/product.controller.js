@@ -110,7 +110,7 @@ export const getProducts = async (req, res) => {
     // 1️⃣ Check Redis cache first
     const cacheData = await redisClient.get('products');
     if (cacheData) {
-      console.log('✅ Cache hit: products');
+      console.log(' Cache hit: products');
       return res.json(JSON.parse(cacheData));
     }
 
@@ -123,7 +123,7 @@ export const getProducts = async (req, res) => {
     console.log('💾 Cache set: products');
     res.json(products);
   } catch (error) {
-    console.error('❌ getProducts error:', error); // log full error for debugging
+    console.error(' getProducts error:', error); // log full error for debugging
     res.status(500).json({
       error: 'Server error',
       details: error.message,

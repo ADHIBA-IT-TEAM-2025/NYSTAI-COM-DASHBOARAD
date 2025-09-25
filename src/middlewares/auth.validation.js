@@ -1,6 +1,6 @@
 import Joi from 'joi';
 
-// ✅ Reusable password regex
+//  Reusable password regex
 const passwordRegex =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%!*\-_])[A-Za-z\d@#$%!*\-_]{6,}$/;
 
@@ -89,7 +89,7 @@ export const verifyOTPValidation = (req, res, next) => {
   validateRequest(schema, req, res, next);
 };
 
-// ✅ Helper for validation
+//  Helper for validation
 function validateRequest(schema, req, res, next) {
   const { error } = schema.validate(req.body, { abortEarly: true });
   if (error) {

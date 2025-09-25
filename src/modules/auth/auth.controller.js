@@ -100,9 +100,9 @@ const transporter = nodemailer.createTransport({
 
 transporter.verify((err, success) => {
   if (err) {
-    console.error('⚠️ Email server connection error:', err.message);
+    console.error(' Email server connection error:', err.message);
   } else {
-    console.log('✅ Email server ready');
+    console.log(' Email server ready');
   }
 });
 
@@ -174,7 +174,7 @@ export const forgotPasswordOTP = async (req, res) => {
 
     res.json({ message: 'OTP sent to email' });
   } catch (error) {
-    console.error('❌ OTP email error:', error.message);
+    console.error(' OTP email error:', error.message);
     res
       .status(500)
       .json({ message: 'Error sending OTP', error: error.message });

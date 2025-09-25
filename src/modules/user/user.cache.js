@@ -7,11 +7,11 @@ export const getCachedUsers = async () => {
     // Check Redis first
     const cached = await redis.get(USER_CACHE_KEY);
     if (cached) {
-      console.log('✅ Users cache hit');
+      console.log(' Users cache hit');
       return JSON.parse(cached);
     }
 
-    console.log('⚡ Users cache miss, fetching from DB...');
+    console.log(' Users cache miss, fetching from DB...');
     const users = await prisma.user.findMany({
       select: {
         id: true,
@@ -28,7 +28,7 @@ export const getCachedUsers = async () => {
 
     return users;
   } catch (err) {
-    console.error('❌ Error in getCachedUsers:', err);
+    console.error(' Error in getCachedUsers:', err);
     throw err;
   }
 };
@@ -36,8 +36,8 @@ export const getCachedUsers = async () => {
 export const clearUserCache = async () => {
   try {
     await redis.del(USER_CACHE_KEY);
-    console.log('🗑️ Users cache cleared');
+    console.log(' Users cache cleared');
   } catch (err) {
-    console.error('❌ Error clearing users cache:', err);
+    console.error(' Error clearing users cache:', err);
   }
 };

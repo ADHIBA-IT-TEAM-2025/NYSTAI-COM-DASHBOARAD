@@ -9,11 +9,11 @@ export const getCachedCategories = async () => {
     // Check Redis first
     const cached = await redis.get(CATEGORY_CACHE_KEY);
     if (cached) {
-      console.log('✅ Categories cache hit');
+      console.log(' Categories cache hit');
       return JSON.parse(cached);
     }
 
-    console.log('⚡ Categories cache miss, fetching from DB...');
+    console.log(' Categories cache miss, fetching from DB...');
     const categories = await prisma.category.findMany({
       include: {
         products: {
@@ -29,7 +29,7 @@ export const getCachedCategories = async () => {
 
     return categories;
   } catch (err) {
-    console.error('❌ Error in getCachedCategories:', err);
+    console.error(' Error in getCachedCategories:', err);
     throw err;
   }
 };
@@ -38,8 +38,8 @@ export const getCachedCategories = async () => {
 export const clearCategoryCache = async () => {
   try {
     await redis.del(CATEGORY_CACHE_KEY);
-    console.log('🗑️ Categories cache cleared');
+    console.log(' Categories cache cleared');
   } catch (err) {
-    console.error('❌ Error clearing category cache:', err);
+    console.error(' Error clearing category cache:', err);
   }
 };

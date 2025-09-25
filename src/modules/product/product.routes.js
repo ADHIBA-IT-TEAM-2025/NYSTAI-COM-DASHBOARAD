@@ -4,7 +4,7 @@ import {
   getProducts,
   getProductById,
   updateProduct,
-  deleteProduct, // ✅ add delete controller
+  deleteProduct, //  add delete controller
 } from './product.controller.js';
 import { uploadProductImages } from '../../middlewares/upload.js';
 import {
@@ -17,19 +17,19 @@ import {
 
 const router = express.Router();
 
-// ➕ Add Product
+//  Add Product
 router.post('/add',uploadProductImages,parseProductArrays,validateBody(createProductSchema),validateProductFiles,createProduct);
 
-// ✏️ Update Product
+// Update Product
 router.put('/update/:id',uploadProductImages,parseProductArrays,validateBody(updateProductSchema),validateProductFiles,updateProduct);
 
-// 📋 Get all Products
+//  Get all Products
 router.get('/list', getProducts);
 
-// 🔍 Get Product by ID
+// Get Product by ID
 router.get('/get/:id', getProductById);
 
-// ❌ Delete Product
+// Delete Product
 router.delete('/delete/:id', deleteProduct);
 
 export default router;
