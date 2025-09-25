@@ -1,25 +1,20 @@
 import prisma from '../../config/db.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import nodemailer from 'nodemailer';
-import path from 'path';
 import { getCachedUser, setCachedUser, clearCachedUser } from './auth.cache.js';
+import nodemailer from 'nodemailer';
 
-// ✅ REGISTER
 export const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // Check if email already exists
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ message: 'Email already registered' });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Role check
     const role =
       email.toLowerCase().trim() ===
       process.env.ADMIN_EMAIL.toLowerCase().trim()
@@ -27,11 +22,10 @@ export const register = async (req, res) => {
         : 'USER';
 
     const newUser = await prisma.user.create({
-      data: { name, email, password: hashedPassword },
+      data: { name, email, password: hashedPassword, role },
     });
-    await clearUserCache(); // invalidate cache
+    await clearCachedUser(); // invalidate cache
 
-    // ✅ Cache user
     await setCachedUser(email, {
       id: newUser.id,
       name: newUser.name,
@@ -55,12 +49,10 @@ export const register = async (req, res) => {
   }
 };
 
-// ✅ LOGIN
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // First check Redis cache
     let user = await getCachedUser(email);
 
     if (!user) {
@@ -71,19 +63,15 @@ export const login = async (req, res) => {
       await setCachedUser(email, user);
     }
 
-    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Generate JWT token
     const token = jwt.sign(
       { id: user.id, role: user.role },
       process.env.JWT_SECRET,
-      {
-        expiresIn: '1d',
-      }
+      { expiresIn: '1d' }
     );
 
     res.json({
@@ -97,25 +85,27 @@ export const login = async (req, res) => {
   }
 };
 
-// ✅ NODEMAILER TRANSPORT
-export const transporter = nodemailer.createTransport({
-  service: 'gmail',
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST,
+  port: Number(process.env.EMAIL_PORT),
+  secure: process.env.EMAIL_SECURE === 'true',
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    pass: process.env.EMAIL_PASS, // must be app password
   },
-  tls: { rejectUnauthorized: false },
+  tls: {
+    rejectUnauthorized: false,
+  },
 });
 
-transporter.verify((error, success) => {
-  if (error) {
-    console.error('Email server connection error:', error);
+transporter.verify((err, success) => {
+  if (err) {
+    console.error('⚠️ Email server connection error:', err.message);
   } else {
-    console.log('Email server is ready to take messages');
+    console.log('✅ Email server ready');
   }
 });
 
-// ✅ FORGOT PASSWORD - OTP
 export const forgotPasswordOTP = async (req, res) => {
   try {
     const { email } = req.body;
@@ -124,29 +114,73 @@ export const forgotPasswordOTP = async (req, res) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
+    const otpExpiry = new Date(Date.now() + 1 * 60 * 1000); // 1 minute
 
     await prisma.user.update({
       where: { email },
       data: { otp, otpExpiry, otpCount: 0 },
     });
 
+    // Send OTP email using your HTML design
     await transporter.sendMail({
       from: `"Support" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: 'Password Reset OTP',
-      html: `<h2>Your OTP: ${otp}</h2><p>Valid for 5 minutes.</p>`,
+      html: `
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Password Reset OTP</title>
+  </head>
+<body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f4f4f4; height:100%; width:100%;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" height="100%">
+    <tr>
+      <td align="center" valign="middle">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600"
+               style="background:#fff; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="padding:40px 30px 60px 30px; text-align:center;">
+              <img src="https://yq8r2ictoc4hzxtd.public.blob.vercel-storage.com/MAI-IMAGE/logo-nystai.png" 
+                   alt="NYSTAI Logo" width="160" style="display:block; margin:0 auto;" />
+              <h2 style="margin:20px 0 0 0; font-size:22px; font-weight:600; color:#555;">YOUR OTP</h2>
+              <p style="margin:12px 0; font-size:16px; color:#333;">Hey ${
+                user.name || 'User'
+              }..!</p>
+              <p style="margin:12px 0; font-size:14px; color:#666; line-height:1.5;">
+                Use the following OTP to reset your password.<br/>
+                OTP is valid for <strong>1 minute</strong>. Do not share this code with others,
+                including NYSTAI employees.
+              </p>
+              <p style="font-size:38px; font-weight:bold; color:#d4a017; letter-spacing:12px; margin:24px 0;">
+                ${otp}
+              </p>
+              <p style="font-size:14px; color:#888; margin:20px 0;">
+                If you didn’t request this, you can ignore this email.
+              </p>
+              <p style="font-size:13px; color:#666; margin-top:30px;">
+                Need help? <a href="https://nystai.com" style="color:#ff4c4c; text-decoration:none;">Ask at Nystai.com</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+      `,
     });
 
     res.json({ message: 'OTP sent to email' });
   } catch (error) {
+    console.error('❌ OTP email error:', error.message);
     res
       .status(500)
       .json({ message: 'Error sending OTP', error: error.message });
   }
 };
 
-// ✅ VERIFY OTP
 export const verifyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -182,7 +216,6 @@ export const verifyOTP = async (req, res) => {
   }
 };
 
-// ✅ RESET PASSWORD
 export const resetPasswordWithOTP = async (req, res) => {
   try {
     const { token } = req.params;
