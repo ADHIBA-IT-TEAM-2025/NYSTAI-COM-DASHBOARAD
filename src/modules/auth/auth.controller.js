@@ -85,25 +85,34 @@ export const login = async (req, res) => {
   }
 };
 
-// Replace your transporter configuration with this:
+// Debug logging for email configuration
+console.log('EMAIL_USER:', process.env.EMAIL_USER);
+console.log('EMAIL_PASS exists:', !!process.env.EMAIL_PASS);
+console.log('NODE_ENV:', process.env.NODE_ENV);
+
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587,
-  secure: false, // true for 465, false for other ports
+  secure: false,
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS, // must be Gmail app password
+    pass: process.env.EMAIL_PASS,
   },
   tls: {
-    rejectUnauthorized: false
-  }
+    rejectUnauthorized: false,
+  },
+  debug: true, // Enable debug logging
+  logger: true, // Enable logger
 });
 
+// Enhanced verification with better error handling
 transporter.verify((err, success) => {
   if (err) {
     console.error('Email server connection error:', err.message);
+    console.error('Full error:', err);
   } else {
-    console.log('Email server ready');
+    console.log('Email server ready ✅');
+    console.log('SMTP connection successful');
   }
 });
 
@@ -111,19 +120,37 @@ export const forgotPasswordOTP = async (req, res) => {
   try {
     const { email } = req.body;
 
+    console.log('Attempting to send OTP to:', email);
+    console.log('Using EMAIL_USER:', process.env.EMAIL_USER);
+
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    const otpExpiry = new Date(Date.now() + 1 * 60 * 1000); // 1 minute
+    const otpExpiry = new Date(Date.now() + 1 * 60 * 1000);
 
     await prisma.user.update({
       where: { email },
       data: { otp, otpExpiry, otpCount: 0 },
     });
 
-    // Send OTP email using your HTML design
-    await transporter.sendMail({
+    console.log('Generated OTP:', otp);
+    console.log('Attempting to send email...');
+
+    // Test connection before sending
+    await new Promise((resolve, reject) => {
+      transporter.verify((error, success) => {
+        if (error) {
+          console.error('SMTP verification failed:', error);
+          reject(error);
+        } else {
+          console.log('SMTP verification successful');
+          resolve(success);
+        }
+      });
+    });
+
+    const mailOptions = {
       from: `"Support" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: 'Password Reset OTP',
@@ -145,7 +172,9 @@ export const forgotPasswordOTP = async (req, res) => {
               <img src="https://yq8r2ictoc4hzxtd.public.blob.vercel-storage.com/MAI-IMAGE/logo-nystai.png"
                     alt="NYSTAI Logo" width="160" style="display:block; margin:0 auto;" />
               <h2 style="margin:20px 0 0 0; font-size:22px; font-weight:600; color:#555;">YOUR OTP</h2>
-              <p style="margin:12px 0; font-size:16px; color:#333;">Hey ${user.name || 'User'}..!</p>
+              <p style="margin:12px 0; font-size:16px; color:#333;">Hey ${
+                user.name || 'User'
+              }..!</p>
               <p style="margin:12px 0; font-size:14px; color:#666; line-height:1.5;">
                 Use the following OTP to reset your password.<br/>
                 OTP is valid for <strong>1 minute</strong>. Do not share this code with others,
@@ -169,14 +198,31 @@ export const forgotPasswordOTP = async (req, res) => {
 </body>
 </html>
       `,
-    });
+    };
+
+    console.log('Mail options prepared, sending...');
+    const result = await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully:', result.messageId);
 
     res.json({ message: 'OTP sent to email' });
   } catch (error) {
     console.error('OTP email error:', error.message);
-    res
-      .status(500)
-      .json({ message: 'Error sending OTP', error: error.message });
+    console.error('Full error stack:', error.stack);
+
+    // More specific error messages
+    if (error.code === 'ECONNECTION') {
+      console.error('Connection error - check network/firewall');
+    } else if (error.code === 'EAUTH') {
+      console.error('Authentication error - check email/password');
+    } else if (error.code === 'ETIMEDOUT') {
+      console.error('Timeout error - check SMTP settings');
+    }
+
+    res.status(500).json({
+      message: 'Error sending OTP',
+      error: error.message,
+      code: error.code || 'UNKNOWN',
+    });
   }
 };
 
