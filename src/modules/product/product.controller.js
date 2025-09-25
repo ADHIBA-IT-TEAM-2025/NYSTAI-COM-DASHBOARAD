@@ -6,9 +6,9 @@ import {
   getCachedProducts,
   setCachedProducts,
   clearCachedProducts,
-} from "./product.cache.js";
-import redisClient from "../../config/redis.js";
-import * as productService from "./product.service.js";
+} from './product.cache.js';
+import redisClient from '../../config/redis.js';
+import * as productService from './product.service.js';
 
 const randomSuffix = () => crypto.randomBytes(6).toString('hex');
 
@@ -108,9 +108,9 @@ export const createProduct = async (req, res) => {
 export const getProducts = async (req, res) => {
   try {
     // 1️⃣ Check Redis cache first
-    const cacheData = await redisClient.get("products");
+    const cacheData = await redisClient.get('products');
     if (cacheData) {
-      console.log("✅ Cache hit: products");
+      console.log('✅ Cache hit: products');
       return res.json(JSON.parse(cacheData));
     }
 
@@ -118,19 +118,18 @@ export const getProducts = async (req, res) => {
     const products = await productService.getAllProducts();
 
     // 3️⃣ Save to Redis with expiration (3600 seconds = 1 hour)
-    await redisClient.setEx("products", 3600, JSON.stringify(products));
+    await redisClient.setEx('products', 3600, JSON.stringify(products));
 
-    console.log("💾 Cache set: products");
+    console.log('💾 Cache set: products');
     res.json(products);
   } catch (error) {
-    console.error("❌ getProducts error:", error); // log full error for debugging
-    res.status(500).json({ 
-      error: "Server error", 
-      details: error.message 
+    console.error('❌ getProducts error:', error); // log full error for debugging
+    res.status(500).json({
+      error: 'Server error',
+      details: error.message,
     });
   }
 };
-
 
 export const getProductById = async (req, res) => {
   try {
